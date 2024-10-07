@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MsDosDirLikeLinux": {
+      "commandName": "Project",
+      "commandLineArgs": "/S \\\\NAS-QNAP\\movies"
+    }
+  }
+}

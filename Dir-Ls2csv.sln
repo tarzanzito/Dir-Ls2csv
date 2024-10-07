@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35312.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dir2csv", "Dir2csv\Dir2csv.csproj", "{4C1D5BF5-3015-411F-BAD0-E0939081E243}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ls2csv", "Ls2csv\Ls2csv.csproj", "{607E253C-0B53-4771-B6AB-338EEA5551DC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4C1D5BF5-3015-411F-BAD0-E0939081E243}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C1D5BF5-3015-411F-BAD0-E0939081E243}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C1D5BF5-3015-411F-BAD0-E0939081E243}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C1D5BF5-3015-411F-BAD0-E0939081E243}.Release|Any CPU.Build.0 = Release|Any CPU
+		{607E253C-0B53-4771-B6AB-338EEA5551DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{607E253C-0B53-4771-B6AB-338EEA5551DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{607E253C-0B53-4771-B6AB-338EEA5551DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{607E253C-0B53-4771-B6AB-338EEA5551DC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4528792D-E88F-4D1A-9095-412B5477B1E8}
+	EndGlobalSection
+EndGlobal

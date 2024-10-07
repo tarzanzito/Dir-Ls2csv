@@ -1,0 +1,41 @@
+﻿        public void GetExtensions()
+        {
+            //try
+            //{
+            //    if (!File.Exists(_dirOutputFile))
+            //        throw new Exception($"File not found: '{_dirOutputFile}'");
+
+            //    _streamReader = new StreamReader(_outputFile1, Program.StreamsEncoding);
+            //    _streamWriter = new StreamWriter(_outputFile2, false, Program.StreamsEncoding);
+
+            //    string? line;
+            //    bool isValidFile = true;
+            //    while ((line = _streamReader.ReadLine()) != null)
+            //    {
+            //        //add extinson column
+            //        string extension = Path.GetExtension(line).Trim().ToUpper();
+
+            //        if (extension.Length > 0)
+            //            extension = extension.Substring(1);
+
+            //        //if (onlyMusicFiles)
+            //        //    isValidFile = Enum.IsDefined(typeof(MusicFileExtension), extension);
+
+            //        //if (isValidFile)
+            //        //{
+            //        //    _streamWriter.WriteLine(rootFolder + line + Constants.FieldSeparator + extension);
+            //        //    _streamWriter.Flush();
+            //        //    _count++;
+            //        //}
+            //    }
+            //}
+
+            //catch (Exception exp)
+            //{
+            //}
+            //finally
+            //{
+            //    _streamReader?.Close();
+            //    _streamWriter?.Close();
+            //}
+        }

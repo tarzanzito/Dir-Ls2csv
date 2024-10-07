@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MsDosDirLikeLinux": {
+      "commandName": "Project",
+      "commandLineArgs": "\\\\NAS-QNAP\\music\\_COLLECTION\\dirOut.txt linux.txt"
+    }
+  }
+}
