@@ -16,7 +16,7 @@ namespace Candal
             string name = Assembly.GetEntryAssembly().GetName().Name;
             string version = Assembly.GetEntryAssembly().GetName().Version.ToString();
 
-            Console.WriteLine($"{name} {version} - Transform standard resault file of 'msdos dir' command into 'csv' file.");
+            Console.WriteLine($"{name} {version} - Transform standard result file of 'msdos dir' command into 'csv' file.");
 
             try
             {
@@ -46,10 +46,15 @@ namespace Candal
         //Typical input:
         //  dir Path
         //  dir /S Path
-        private static void ChangeToCsvLinearFormat(string inputFile, string outputFile)
+        private static void ChangeToCsvLinearFormat(string inputFileName, string outputFileName)
         {
-            Console.WriteLine($"InputFile={inputFile}");
-            Console.WriteLine($"OutputFile={outputFile}");
+            Log.Information("'ChangeToCsvLinearFormat' - Started...");
+
+            Log.Information($"InputFile={inputFileName}");
+            Log.Information($"OutputFile={outputFileName}");
+
+            //Stopwatch stopwatch = Utils.GetNewStopwatch();
+            //Utils.Startwatch(stopwatch, "MusicCollectionMsDos", "ChangeOutputToLinearFormat");
 
             StreamReader streamReader = null;
             StreamWriter streamWriter = null;
@@ -60,19 +65,24 @@ namespace Candal
 
             try
             {
-                if (!File.Exists(inputFile))
-                    throw new Exception($"InputFile:'{inputFile}' not found.");
+                if (!File.Exists(inputFileName))
+                    throw new Exception($"InputFileName:'{inputFileName}' not found.");
 
-                if (!CanCreateFile(outputFile))
-                    throw new Exception($"OutputFile:'{outputFile}' cannot be created.");
+                if (!CanCreateFile(outputFileName))
+                    throw new Exception($"OutputFileName:'{outputFileName}' cannot be created.");
 
                 bool isFolder = false;
-                bool isValid = true;
+                //bool isValid = true;
                 string baseDir = "";
                 string item;
 
-                streamReader = new StreamReader(inputFile, System.Text.Encoding.UTF8);
-                streamWriter = new StreamWriter(outputFile, false, System.Text.Encoding.UTF8);
+                //using (StreamReader reader = new StreamReader(fileName)) //C# 8
+                //{
+                //}
+                //using var _streamReader = new StreamReader(_fullFileNameTemp, Constants.StreamsEncoding);
+
+                streamReader = new StreamReader(inputFileName, System.Text.Encoding.UTF8);
+                streamWriter = new StreamWriter(outputFileName, false, System.Text.Encoding.UTF8);
 
                 while ((line = streamReader.ReadLine()) != null)
                 {
@@ -98,12 +108,7 @@ namespace Candal
                     if (isFolder && (item == ".") || (item == ".."))
                         continue;
 
-                    //Verify Context Filter
-                    //Apply Extensions Filter
-
                     //write
-                    if (isValid)
-                    {
                         string newLine = $"{baseDir}{Path.DirectorySeparatorChar}{item}";
 
                         if (isFolder)
@@ -111,7 +116,6 @@ namespace Candal
 
                         streamWriter.WriteLine(newLine);
                         streamWriter.Flush();
-                    }
 
                     //counters
                     if (isFolder)
@@ -119,10 +123,16 @@ namespace Candal
                     else
                         countFiles++;
                 }
+
+                Log.Information($"Total Folders:{countFolders}");
+                Log.Information($"Total Files  :{countFiles}");
+                Log.Information($"Total        :{countFolders + countFiles}");
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                Log.Error($"{ex.Message}");
+                if (line != null)
+                    Log.Error($"Line:{line}");
             }
             finally
             {
@@ -138,9 +148,9 @@ namespace Candal
                 }
             }
 
-            Console.WriteLine($"Total Folders:{countFolders}");
-            Console.WriteLine($"Total Files  :{countFiles}");
-            Console.WriteLine($"Total        :{countFolders + countFiles}");
+            //Utils.Stopwatch(stopwatch, "MusicCollectionMsDos", "ChangeOutputToLinearFormat");
+
+            Log.Information("'ChangeOutputToLinearFormat' - Finished...");
         }
 
         private static bool CanCreateFile(string fileName)

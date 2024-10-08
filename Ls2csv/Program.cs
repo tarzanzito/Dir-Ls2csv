@@ -1,303 +1,175 @@
-﻿using Microsoft.VisualBasic;
+﻿
 using System;
-using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
+
 
 namespace Candal
 {
     internal class Program
     {
-        internal static readonly System.Text.Encoding StreamsEncoding = System.Text.Encoding.UTF8;
-
-
-        private static StreamWriter? _streamWriter;
-
         public static int Main(string[] args)
         {
-            Console.WriteLine("@Program Started...");
+            string name = Assembly.GetEntryAssembly()?.GetName().Name ?? "";
+            string version = Assembly.GetEntryAssembly()?.GetName()?.Version?.ToString() ?? "";
 
-            string rootPath = @"\\NAS-QNAP\music\_COLLECTION";
-            string dirOutput = "DirOutput.txt";
-            string dirTemp = "DirTemp.txt";
+            Console.WriteLine($"{name} ver:{version} - Transform standard resault file of 'linux ls -la' command into 'csv' file.");
 
-            //rootPath = @"\\NAS-QNAP\movies";
-            /////////////////////////////////////
-            ///
-            switch(args.Length)
+            try
             {
-                case 1:
-                    rootPath = args[0];
-                    break;
-                case 2:
-                    rootPath = args[1];
-                    break;
-                case 3:
-                    rootPath = args[1];
-                    dirOutput = args[1];
+                //Validatons
+                if ((args.Length < 2) && (args.Length < 3))
+                    throw new Exception($"Usage:{name} LsResultInputFile CSVOutputFile initialPath(optional)");
+
+                string inputFile = args[0];
+                string outputFile = args[1];
+                string prefixPath = string.Empty;
+                if (args.Length == 3)
+                    prefixPath = args[2];
+
+                //outputFile = "DirOutput.csv";
+                //inputFile = "DirInput.txt";
+                //initialPath = "/xpto";
+
+                //Process
+                ChangeToCsvLinearFormat(inputFile, outputFile, prefixPath);
             }
-
-            if (args.Length < 1 || args.Length > 3)
+            catch (Exception ex)
             {
-                Console.WriteLine($"Usage folderName");
-                Console.WriteLine($"Usage folderName outputFile");
-                Console.WriteLine($"Usage /S folderName (/S recursive search");
-                Console.WriteLine($"Usage /S folderName outputFile (/S recursive search");
+                Console.WriteLine(ex.Message);
+                Console.WriteLine("Process aborted.");
                 return 1;
             }
-
-            bool isRecursive = (args[0].ToUpper() == "/S");
-
-            if (isRecursive)
-            {
-
-            }
-
-                //TODO: sinalizar
-
-                rootPath = args[0];
-                dirOutput = args[1];
-               
-            
-            dirTemp = $"{dirOutput}.tmp";
-
-            ////////////////////////////////////                        
-
-            string dirTempFile = Path.Combine(rootPath, dirTemp);
-            string dirOutputFile = Path.Combine(rootPath, dirOutput);
-
-            Console.WriteLine($"DIR Folder:{rootPath}");
-            Console.WriteLine($"Temp File:{dirTempFile}");
-            Console.WriteLine($"Output File:{dirOutputFile}");
-
-            if (!Directory.Exists(rootPath))
-            {
-                Console.WriteLine($"Error: DIR Folder Not Found.");
-                return 1;
-            }
-
-            //MSDOS command
-            //note: is 'nul'  not 'null' 
-            string msDosCommand = $"chcp 65001>nul & dir /S {rootPath}"; 
-            //string msDosCommand = $"chcp 65001>nul & dir /S /A:D {rootPath}";
-            //string msDosCommand = $"chcp 65001>nul & dir /S /A:-D {rootPath}";
-
-            //MsDosProcessSimple(msDosCommand, dirTempFile);
-            MsDosProcess(msDosCommand, dirTempFile);
-
-            ChangeOutputToLinearFormat(dirTempFile, dirOutputFile);
-
-            if (File.Exists(dirTempFile))
-                File.Delete(dirTempFile);
-
-            Console.WriteLine("@Programs Finished...");
 
             return 0;
         }
 
-
-        /// Process 
-        private static void MsDosProcess(string msDosCommand, string dirTempFile)
-        {
-            Console.WriteLine("@MsDosProcess Started...");
-            Console.WriteLine($"Output File:{dirTempFile}");
-
-            try
-            {
-                //output
-                _streamWriter = new StreamWriter(dirTempFile, false, Program.StreamsEncoding);
-
-                //Process Info
-                var startInfo = new ProcessStartInfo();
-                startInfo.FileName = "cmd.exe";
-                startInfo.Arguments = $"/C {msDosCommand}";
-
-                //dos without window
-                //startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-                //startInfo.UseShellExecute = false;
-                //startInfo.CreateNoWindow = false;
-
-                //redirect output to files
-                startInfo.RedirectStandardOutput = true;
-                startInfo.RedirectStandardError = true;
-
-                //Process
-                Process process = new();
-                process.StartInfo = startInfo;
-
-                //V1
-                process.OutputDataReceived += OutputDataReceived;
-                process.ErrorDataReceived += ErrorDataReceived;
-
-                //V2 - with lambda (i dont like)
-                //process.OutputDataReceived += (sender, args) =>
-                //{
-                //    _streamWriter.WriteLine(args.Data);
-                //    _streamWriter.Flush();
-                //};
-
-                //process.OutputDataReceived += (sender, args) =>
-                //{
-                //    _streamWriter.WriteLine("ERROR:" + args.Data);
-                //    _streamWriter.Flush();
-                //};
-
-
-                //Start
-                process.Start();
-                process.BeginOutputReadLine(); //important to file output 
-                process.WaitForExit();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"'MsDosProcess' ERROR:{ex.Message}");
-                throw;
-            }
-            finally
-            {
-                if (_streamWriter != null)
-                {
-                    _streamWriter.Flush();
-                    _streamWriter.Close();
-                }
-            }
-
-            Console.WriteLine("@MsDosProcess Finished...");
-        }
-
-        private static void ErrorDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (_streamWriter == null)
-                return;
-
-            _streamWriter.WriteLine("ERROR:" + e.Data);
-            _streamWriter.Flush();
-        }
-
-        private static void OutputDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (_streamWriter == null)
-                return;
-
-            _streamWriter.WriteLine(e.Data);
-            _streamWriter.Flush();
-        }
-
-        /// Process Simple
-        private static void MsDosProcessSimple(string msDosCommand, string dirTempFile)
-        {
-            try
-            {
-                //Process Info
-                var startInfo = new ProcessStartInfo();
-                startInfo.FileName = "cmd.exe";
-                startInfo.Arguments = $"/C {msDosCommand}";
-
-                //dos without window
-                //startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-                //startInfo.UseShellExecute = false;
-                //startInfo.CreateNoWindow = false;
-
-                //Process
-                Process process = new();
-                process.StartInfo = startInfo;
-
-                //Start
-                process.Start();
-                process.WaitForExit();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"'MsDosProcess' ERROR:{ex.Message}");
-            }
-        }
-
         //Set msdos dir format to linux ls  format
         //dir /S Path
-        //linux relation command
-        // ls -l -h -a -p -R Path
+        /// linux relation command
+        /// ls -l -h -a -p -R Path
         //
         // -l  -- list with long format - show permissions
         // -h  -- list long format with readable file size
         // -a  -- list all files including hidden file starting with '.'
         // -p  -- indicator-style=slash - append '/' indicator to directories
         // -R  -- list recursively directory tree
-        private static void ChangeOutputToLinearFormat(string dirInputFile, string dirOutputFile)
-        { 
-            Console.WriteLine("@ChangeOutputToLinearFormat Started...");
-            Console.WriteLine($"Input File :{dirInputFile}");
-            Console.WriteLine($"Output File:{dirOutputFile}");
 
-            int countFolders = 0;
-            int countFiles = 0;
+        private static void ChangeToCsvLinearFormat(string inputFileName, string outputFileName, string prefixPath)
+        {
+            //-rw-rw-r-- 1 root root 18 May 28 19:48 text_file_1.txt
+
+            Log.Information("ChangeOutputToLinearFormat Started");
+
+            Log.Information($"InputFile={inputFileName}");
+            Log.Information($"OutputFile={outputFileName}");
+            Log.Information($"PrefixPath={prefixPath}");
+
+            //Stopwatch stopwatch = Utils.GetNewStopwatch();
+            //Utils.Startwatch(stopwatch, "LinuxShellHelper", "ChangeOutputToLinearFormat");
+            
+            if (!File.Exists(inputFileName))
+            {
+                Log.Error($"Folder Root not exists=[{inputFileName}");
+                return;
+            }
+
             StreamReader? streamReader = null;
             StreamWriter? streamWriter = null;
 
+            string? line = null;
+            
             try
             {
-                if (!File.Exists(dirInputFile))
-                {
-                    Console.WriteLine("Output File Not Found.");
-                    return;
-                }
+                if (!File.Exists(inputFileName))
+                throw new Exception($"InputFile:'{inputFileName}' not found.");
 
-                string? line = null;
+            if (!CanCreateFile(outputFileName))
+                throw new Exception($"OutputFile:'{outputFileName}' cannot be created.");
 
-                //using (StreamReader reader = new StreamReader(fileName)) //C# 8
-                //{
-                //}
-                //using var _streamReader = new StreamReader(_fullFileNameTemp, Constants.StreamsEncoding);
-
-                streamReader = new StreamReader(dirInputFile, Program.StreamsEncoding);
-                streamWriter = new StreamWriter(dirOutputFile, false, Program.StreamsEncoding);
+                streamReader = new StreamReader(inputFileName, System.Text.Encoding.UTF8);
+                streamWriter = new StreamWriter(outputFileName, false, System.Text.Encoding.UTF8);
 
                 bool isFolder = false;
-                string baseDir = "";
-                string item;
-                char dirMark = Path.DirectorySeparatorChar;
+                bool hasEndFolderChar = false;
+                bool useInitialPath = (prefixPath.Length > 0);
+                string basePath = "";
+                string rootPath = "";
+                string member = "";
+                int memberStartAt = 0;
+
+                //get rootPath without last '/'
+                if (useInitialPath)
+                {
+                    if (prefixPath.EndsWith("'/"))
+                        rootPath = prefixPath.Substring(0, prefixPath.Length - 1);
+                    else
+                        rootPath = prefixPath;
+                }
 
                 while ((line = streamReader.ReadLine()) != null)
                 {
-                    if (line.Length < 14) //less than phrase " Directory of "
+                    if (line.Length == 0)
                         continue;
 
-                    if (line.Substring(0, 14) == " Directory of ") //new directory
+                    if (line.StartsWith("total "))
+                        continue;
+
+                    if (line.StartsWith("."))
                     {
-                        baseDir = line.Substring(14);
+                        if ((line.Length - 2) == 0)
+                                basePath = "/";
+                        else
+                            basePath = line.Substring(1, line.Length - 2) + "/";
                         continue;
                     }
 
-                    if (line.Length < 37) //less than phrase "2022/09/21  22:53    <DIR>          "
-                        continue;
+                    if (memberStartAt == 0) //only to improve performance
+                    {
+                        LinuxLineInfo lineInfo = GetLineInfo(line);
+                        memberStartAt = lineInfo.MemberStartAt; //add to improve
+                    }
 
-                    if (!DateTime.TryParse(line.Substring(0, 10), out DateTime dt))
-                        continue;
+                    member = line.Substring(memberStartAt, line.Length - memberStartAt);
+                    char memberType = Char.Parse(line.Substring(0, 1));
 
-                    isFolder = (line.Substring(21, 5) == "<DIR>");
+                    if (!ValidateType(memberType))
+                        throw new Exception($"Error in member type:{line}");
 
-                    item = line.Substring(36);
-
-                    if (isFolder && (item == ".") || (item == ".."))
-                        continue;
-
-                    string newLine = $"{baseDir}{Path.DirectorySeparatorChar}{item}";
+                    isFolder = memberType == 'd';
 
                     if (isFolder)
-                        newLine += dirMark;
+                    {
+                        if (member == "." || member == ".."
+                                || member == "./" || member == "../") //-p
+                            continue;
+                        hasEndFolderChar = member.EndsWith("/");
+                    }
+
+                    //tem custos if (ValidatePermissions(line) > 0)
+
+                    //write
+                    string newLine;
+
+                    if (useInitialPath)
+                        newLine = $"{rootPath}{basePath}{member}";
+                    else
+                        newLine = $"{basePath}{member}";
 
                     streamWriter.WriteLine(newLine);
                     streamWriter.Flush();
-
-                    if (isFolder)
-                        countFolders++;
-                    else
-                        countFiles++;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"'ChangeOutputToLinearFormat' ERROR:{ex.Message}");
-                throw;
+                Log.Error($"Message Error:{ex.Message}");
+
+                Log.Error($"InputFileName:{inputFileName}");
+                Log.Error($"OutoutFileName:{outputFileName}");
+
+                if (line != null)
+                    Log.Error($"Line:{line}");
             }
             finally
             {
@@ -308,16 +180,204 @@ namespace Candal
                 }
                 if (streamWriter != null)
                 {
+                    //_streamWriter.Flush();
                     streamWriter.Close();
                     streamWriter.Dispose();
                 }
             }
-
-            Console.WriteLine($"Counted Folders:{countFolders}");
-            Console.WriteLine($"Counted Files  :{countFiles}");
-
-            Console.WriteLine("@ChangeOutputToLinearFormat Finished...");
         }
 
+        private static bool CanCreateFile(string fileName)
+        {
+            bool canCreate = false;
+
+            try
+            {
+                using (File.Create(fileName)) { };
+                File.Delete(fileName);
+                canCreate = true;
+            }
+            catch
+            {
+            }
+
+            return canCreate;
+        }
+
+        private static int ValidatePermissions(string line)
+        {
+            //drwxrwxrwx
+
+            //type 0
+            //read 1, 4, 7
+            //writ 2, 5, 8
+            //exec 3, 6, 9
+
+            if (line.Length < 10)
+                return -1;
+
+            char[] attrArray = line.ToCharArray(0, 10);
+
+            //type 0
+            if (!ValidateType(attrArray[0]))
+                return 1;
+
+            //user read 1
+            if (!ValidateRead(attrArray[1]))
+                return 2;
+
+            //user write 2
+            if (!ValidateWrite(attrArray[2]))
+                return 3;
+
+            //user execute 3
+            if (!ValidateExecute(attrArray[3]))
+                return 4;
+
+            //group read 4
+            if (!ValidateRead(attrArray[4]))
+                return 5;
+
+            //group write 5
+            if (ValidateWrite(attrArray[5]))
+                return 6;
+
+            //group execute 6
+            if (!ValidateExecute(attrArray[6]))
+                return 7;
+
+            //all read
+            if (ValidateRead(attrArray[7]))
+                return 8;
+
+            //all write
+            if (ValidateWrite(attrArray[8]))
+                return 9;
+
+            //all execute
+            if (!ValidateWrite(attrArray[9]))
+                return 10;
+
+            return 0;
+        }
+
+        //-: Um arquivo regular
+        //d: Um diretório
+        //l: Um link simbólico
+        //c: Um arquivo de dispositivo de caractere
+        //b: Um arquivo de dispositivo de bloco
+        //s: Uma tomada
+        //p: Um pipe nomeado(FIFO)
+
+        private const string attrType = "-lcdsp";
+        private const string attrRead = "-r";
+        private const string attrWrite = "-w";
+        private const string attrExecute = "-x";
+
+        private static bool ValidateType(char chr)
+        {
+            return attrType.Contains(chr);
+        }
+
+        private static bool ValidateRead(char chr)
+        {
+            return attrRead.Contains(chr);
+        }
+
+        private static bool ValidateWrite(char chr)
+        {
+            return attrWrite.Contains(chr);
+        }
+
+        private static bool ValidateExecute(char chr)
+        {
+            return attrExecute.Contains(chr);
+        }
+
+        private static LinuxLineInfo GetLineInfo(string line)
+        {
+            //-rwxrwxrwx 1 root root         69 Apr  3 23:34 file name.txt
+
+            int count = 0;
+            int posI = 0;
+            int posE = 0;
+
+            var lineInfo = new LinuxLineInfo();
+
+            while (count < 9)
+            {
+                posI = NextNonSpace(line, posI);
+                posE = NextSpace(line, posI + 1);
+
+                switch (count)
+                {
+                    case 0:
+                        lineInfo.Attributes = line.Substring(posI, posE - posI);
+                        break;
+                    case 1:
+                        lineInfo.LinksNumber = line.Substring(posI, posE - posI);
+                        break;
+                    case 2:
+                        lineInfo.User = line.Substring(posI, posE - posI);
+                        break;
+                    case 3:
+                        lineInfo.Group = line.Substring(posI, posE - posI);
+                        break;
+                    case 4:
+                        lineInfo.Size = line.Substring(posI, posE - posI);
+                        break;
+                    case 5: // for datetime remove case 6 and 7 passing to 6
+                        lineInfo.Month = line.Substring(posI, posE - posI);
+                        break;
+                    case 6:
+                        lineInfo.Day = line.Substring(posI, posE - posI);
+                        break;
+                    case 7:
+                        lineInfo.Hour = line.Substring(posI, posE - posI);
+                        break;
+                    case 8:
+                        //posI++;
+                        lineInfo.Member = line.Substring(posI, line.Length - posI);
+                        lineInfo.MemberStartAt = posI;
+                        break;
+                    default:
+                        throw new Exception("ErrorEventArgs in Process line");
+                }
+
+                count++;
+                posI = posE;
+            };
+
+            //lineInfo.MemberStartAt = posI;
+
+            return lineInfo;
+        }
+
+        private static int NextNonSpace(string line, int startAt)
+        {
+            int pos = startAt;
+            while ((pos < line.Length) && (line[pos] == ' '))
+            {
+                pos++;
+            }
+
+            return pos;
+        }
+
+        private static int NextSpace(string line, int startAt)
+        {
+            int pos = startAt;
+            while ((pos < line.Length) && (line[pos] != ' '))
+            {
+                pos++;
+            }
+
+            return pos;
+        }
+
+        public class Constants
+        {
+            public static readonly System.Text.Encoding StreamsEncoding = System.Text.Encoding.UTF8;
+        }
     }
 }
